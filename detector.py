@@ -666,6 +666,36 @@ def scan_file(
     )
 
 
+
+def scan_for_ai(
+    text: str,
+    filename: str = "input.txt",
+) -> list[dict[str, Any]]:
+    """
+    Return findings in the exact format expected by the AI branch.
+
+    The actual credential is never included. Both the matched value and
+    surrounding context are redacted before being returned.
+    """
+    findings = scan_text(
+        text,
+        filename=filename,
+        include_internal_secret=False,
+    )
+
+    return [
+        {
+            "type": finding["type"],
+            "service": finding["service"].lower(),
+            "severity": finding["severity"].lower(),
+            "line": finding["line"],
+            "match": finding["redacted"],
+            "context": finding["context_redacted"],
+            "file": finding["file"],
+        }
+        for finding in findings
+    ]
+
 if __name__ == "__main__":
     import argparse
 
