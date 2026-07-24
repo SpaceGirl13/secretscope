@@ -38,12 +38,6 @@ except ImportError:
     def decode_text_bytes(data):
         return data.decode("utf-8", errors="replace")
 
-# Real GitHub repository scanning isn't implemented yet (git_scanner.py is
-# an empty stub) - this always returns safe, synthetic demo findings so the
-# tab has something to show without pretending to have cloned a real repo.
-def scan_github_repo(url):
-    return scan_for_ai("mock", "mock_repo/config.py")
-
 # Person 4's modules - graceful fallback if not ready
 try:
     from diff_view import render_diff
@@ -369,8 +363,8 @@ if "attack_revealed" not in st.session_state:
     st.session_state.attack_revealed = {}
 if "scan_ran" not in st.session_state:
     st.session_state.scan_ran = False
-NAV_OPTIONS = ["Paste Code", "Upload Files", "GitHub Repo"]
-NAV_CAPTIONS = ["Scan a snippet directly", "Scan one or more local files", "Scan a public repository"]
+NAV_OPTIONS = ["Paste Code", "Upload Files"]
+NAV_CAPTIONS = ["Scan a snippet directly", "Scan one or more local files"]
 if "nav_page" not in st.session_state:
     st.session_state.nav_page = NAV_OPTIONS[0]
 
@@ -398,6 +392,7 @@ with st.sidebar:
     st.divider()
 
     st.markdown("#### Scan source")
+    previous_nav_page = st.session_state.nav_page
     st.session_state.nav_page = st.radio(
         "Choose where to scan for secrets",
         NAV_OPTIONS,
@@ -406,6 +401,11 @@ with st.sidebar:
         index=NAV_OPTIONS.index(st.session_state.nav_page),
         label_visibility="collapsed",
     )
+    if st.session_state.nav_page != previous_nav_page:
+        st.session_state.findings = []
+        st.session_state.analyses = []
+        st.session_state.attack_revealed = {}
+        st.session_state.scan_ran = False
 
     st.divider()
     with st.expander("About SecretScope"):
@@ -638,19 +638,6 @@ with st.container(border=True):
                 all_findings.extend(scan_for_ai(text, filename=f.name))
             run_scan(all_findings)
 
-    elif page == "GitHub Repo":
-        st.markdown("### Scan a public GitHub repository")
-        st.caption("Demo mode - real repository cloning isn't wired up yet, so this scans safe synthetic data.")
-        repo_url = st.text_input(
-            "GitHub URL:", placeholder="https://github.com/username/repository",
-            help="Paste the full URL of a public GitHub repository.",
-        )
-        if st.button("Scan repository", type="primary", key="scan_repo"):
-            if repo_url.strip():
-                try:
-                    run_scan(scan_github_repo(repo_url.strip()))
-                except Exception as e:
-                    st.error(f"Failed to scan repo: {e}")
 
 
 # ---------- Results ----------
