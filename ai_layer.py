@@ -20,6 +20,47 @@ load_dotenv()
 client = anthropic.Anthropic()
 MODEL = "claude-haiku-4-5-20251001"
 
+# Secrets must never leave this process. Reuse detector.py's tested masking
+# so the format stays consistent; fall back to an equivalent local
+# implementation if detector.py isn't importable in some environment.
+try:
+    from detector import redact_secret, redact_context
+except ImportError:
+    def redact_secret(secret):
+        if not secret:
+            return secret
+        if len(secret) <= 8:
+            return "*" * len(secret)
+        return f"{secret[:4]}{'*' * (len(secret) - 8)}{secret[-4:]}"
+
+    def redact_context(line, secret):
+        if not secret or not line:
+            return line
+        return line.replace(secret, "[REDACTED]")
+
+
+def _sanitize_for_api(finding):
+    """Return a copy of finding with the real secret value masked out.
+
+    This is called right before any prompt is built, regardless of whether
+    the caller already redacted the finding upstream — the API call is the
+    last line of defense before the secret would leave the machine.
+    """
+    raw_match = finding.get("match", "")
+    raw_context = finding.get("context", "")
+
+    safe = dict(finding)
+    safe["context"] = redact_context(raw_context, raw_match)
+    safe["match"] = redact_secret(raw_match)
+
+    # Belt-and-suspenders: if the secret wasn't a clean substring match
+    # (different quoting/escaping) redact_context silently no-ops, so
+    # double check nothing slipped through.
+    if raw_match and raw_match in safe["context"]:
+        safe["context"] = "[REDACTED]"
+
+    return safe
+
 # ---------- Caching ----------
 # Cache results in memory so re-scans during the demo are instant.
 # ---------- Caching ----------
@@ -207,12 +248,13 @@ def analyze_finding(finding):
     if key in _analysis_cache:
         return _analysis_cache[key]
 
+    safe_finding = _sanitize_for_api(finding)
     prompt = f"""You are a security analyst. Analyze this potential secret leak.
 
-Type: {finding.get('type', 'Unknown')}
-Service: {finding.get('service', 'unknown')}
-Line context: {finding.get('context', '')}
-Matched string: {finding.get('match', '')}
+Type: {safe_finding.get('type', 'Unknown')}
+Service: {safe_finding.get('service', 'unknown')}
+Line context: {safe_finding.get('context', '')}
+Matched string (partially masked for security): {safe_finding.get('match', '')}
 
 Respond in JSON with these exact keys:
 - is_real: boolean (false if this looks like a placeholder like "your_key_here", "xxx", "example", or a documented test key)
@@ -279,9 +321,10 @@ def analyze_findings_batch(findings):
         chunk = uncached_findings[chunk_start:chunk_start + 10]
         chunk_indices = uncached_indices[chunk_start:chunk_start + 10]
 
+        safe_chunk = [_sanitize_for_api(f) for f in chunk]
         findings_text = "\n\n".join(
-            f"Finding {i+1}:\n  Type: {f.get('type')}\n  Service: {f.get('service')}\n  Context: {f.get('context', '')}\n  Match: {f.get('match', '')}"
-            for i, f in enumerate(chunk)
+            f"Finding {i+1}:\n  Type: {f.get('type')}\n  Service: {f.get('service')}\n  Context: {f.get('context', '')}\n  Match (partially masked for security): {f.get('match', '')}"
+            for i, f in enumerate(safe_chunk)
         )
 
         prompt = f"""You are a security analyst. Analyze these {len(chunk)} potential secret leaks.
@@ -335,11 +378,12 @@ def simulate_attack(finding, analysis=None):
     if key in _attack_cache:
         return _attack_cache[key]
 
+    safe_finding = _sanitize_for_api(finding)
     prompt = f"""You are demonstrating the impact of a leaked secret to a developer in a security education tool.
 
-Secret type: {finding.get('type', 'Unknown')}
-Service: {finding.get('service', 'unknown')}
-Context: {finding.get('context', '')}
+Secret type: {safe_finding.get('type', 'Unknown')}
+Service: {safe_finding.get('service', 'unknown')}
+Context: {safe_finding.get('context', '')}
 
 Generate a realistic, dramatic 4-step attack narrative showing what a malicious actor would do with this leaked credential. Each step should be concrete, technical, and feel urgent. Include specific numbers, tools, and outcomes where possible (dollar amounts, tool names like TruffleHog, specific API calls, real breach examples).
 
