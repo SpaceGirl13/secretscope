@@ -184,6 +184,23 @@ def looks_like_placeholder(value: str, line: str = "") -> bool:
     return any(word in combined for word in PLACEHOLDER_WORDS)
 
 
+
+def looks_like_human_text(value: str) -> bool:
+    """Return True for ordinary phrases, sentences, titles, and messages."""
+    words = value.strip().split()
+
+    if len(words) < 3:
+        return False
+
+    alphabetic_words = sum(
+        1
+        for word in words
+        if word.strip(".,!?;:'\"-()[]{}").isalpha()
+    )
+
+    return alphabetic_words / len(words) >= 0.75
+
+
 def is_test_or_example_file(filename: str) -> bool:
     """Return True for filenames likely used in tests, samples, or demos."""
     lowered = Path(filename).name.lower()
@@ -435,9 +452,9 @@ def scan_entropy_candidates(
     findings: list[dict[str, Any]] = []
 
     entropy_pattern = {
-        "name": "Suspicious High-Entropy Secret",
-        "service": "high_entropy",
-        "severity": "Medium",
+        "name": "Suspicious Hardcoded Secret",
+        "service": "generic",
+        "severity": "High",
     }
 
     for line_number, line in enumerate(text.splitlines(), start=1):
@@ -448,18 +465,32 @@ def scan_entropy_candidates(
             variable_name = match.group("variable")
             value = match.group("value")
 
-            if not SECRET_VARIABLE_PATTERN.search(variable_name):
-                continue
-
+            # Scan suspicious quoted assignments regardless of the variable name.
+            # This catches secrets hidden under vague names such as:
+            # value = "...", credential = "...", data = "...", or x = "...".
             if looks_like_placeholder(value, line):
                 continue
 
-            if len(value) < 16:
+            if looks_like_human_text(value):
+                continue
+
+            if len(value) < 12:
                 continue
 
             entropy = shannon_entropy(value)
 
-            if entropy < 3.5:
+            # A lower threshold is used for password-like mixed strings, while
+            # still avoiding most ordinary words and short configuration values.
+            has_upper = any(character.isupper() for character in value)
+            has_lower = any(character.islower() for character in value)
+            has_digit = any(character.isdigit() for character in value)
+            has_symbol = any(not character.isalnum() for character in value)
+            character_variety = sum((has_upper, has_lower, has_digit, has_symbol))
+
+            if entropy < 3.3:
+                continue
+
+            if character_variety < 2 and len(value) < 24:
                 continue
 
             findings.append(

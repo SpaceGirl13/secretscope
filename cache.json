@@ -1,0 +1,62 @@
+{
+  "analyses": {
+    "f1c7112e2e92153a0fc81d9058772474": {
+      "is_real": false,
+      "confidence": 5,
+      "blast_radius": "An attacker with this AWS access key could launch EC2 instances, access S3 buckets, and modify IAM policies, potentially costing thousands of dollars in resource abuse and exposing sensitive data stored in AWS services.",
+      "rotation_url": "https://console.aws.amazon.com/iam/home#/security_credentials",
+      "fixed_line": "AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')",
+      "env_var_name": "AWS_ACCESS_KEY_ID"
+    },
+    "dbe15b05ce6f87012d234b22faa012c7": {
+      "is_real": false,
+      "confidence": 8,
+      "blast_radius": "An attacker with this OpenAI API key could make unlimited API calls, generating thousands of dollars in charges, stealing fine-tuning data, and potentially accessing organization information through the API.",
+      "rotation_url": "https://platform.openai.com/account/api-keys",
+      "fixed_line": "openai.api_key = os.getenv('OPENAI_API_KEY')",
+      "env_var_name": "OPENAI_API_KEY"
+    },
+    "1eede2c91c814c84aa14247cc6e640eb": {
+      "is_real": false,
+      "confidence": 3,
+      "blast_radius": "An attacker with this Stripe secret key could process unauthorized charges, refund legitimate transactions, access customer payment data, and potentially steal thousands of dollars from the business.",
+      "rotation_url": "https://dashboard.stripe.com/account/apikeys",
+      "fixed_line": "stripe.api_key = os.getenv('STRIPE_SECRET_KEY')",
+      "env_var_name": "STRIPE_SECRET_KEY"
+    },
+    "fbf2ed613ecf554caf2245f55784ebc3": {
+      "is_real": false,
+      "confidence": 12,
+      "blast_radius": "An attacker with this GitHub token could access private repositories, modify code and CI/CD pipelines, exfiltrate source code and secrets, and compromise the entire software supply chain.",
+      "rotation_url": "https://github.com/settings/tokens",
+      "fixed_line": "GH_TOKEN = os.getenv('GITHUB_TOKEN')",
+      "env_var_name": "GITHUB_TOKEN"
+    }
+  },
+  "attacks": {
+    "f1c7112e2e92153a0fc81d9058772474": [
+      "Step 1: A threat actor uses TruffleHog or similar scanning tools to discover the exposed AWS Access Key in your GitHub repository history. Within minutes, automated bots are testing the key's validity against AWS API endpoints. The actor obtains the corresponding Secret Access Key from your codebase or environment files, gaining full programmatic access to your AWS account equivalent to an IAM user with attached permissions.",
+      "Step 2: The attacker runs AWS CLI commands like 'aws ec2 describe-instances' and 'aws s3 ls' to enumerate your infrastructure, discovering 47 S3 buckets containing customer data, 12 RDS database instances, and 230 EC2 instances across multiple regions. They check IAM policies using 'aws iam get-user-policy' to understand privilege scope and identify the most valuable targets.",
+      "Step 3: The actor launches a large-scale cryptocurrency mining operation by spinning up 50 p3.8xlarge GPU instances in us-east-1, incurring $18,000 in charges within 24 hours before detection. Simultaneously, they exfiltrate 2.3TB of sensitive data from your S3 buckets to an external attacker-controlled bucket, including customer PII, source code, and API credentials, mirroring the 2019 Capital One breach affecting 100 million customers.",
+      "Step 4: The attacker modifies IAM roles and creates persistent backdoor access by adding a second Access Key to the compromised user account and establishing an IAM role with cross-account trust relationships to their own AWS account. They leave the infrastructure running for 18 days before your security team's billing alert triggers investigation, at which point they've sold the exfiltrated data on the dark web for $50,000, resulting in estimated breach costs of $4.2 million in remediation, notification, and regulatory fines."
+    ],
+    "dbe15b05ce6f87012d234b22faa012c7": [
+      "Step 1: A threat actor discovers the exposed API key using automated scanning tools like TruffleHog or GitHub's secret scanning bypass techniques, finding it in your public repository's commit history. They immediately test the key's validity by making a simple API call: `curl https://api.openai.com/v1/models -H \"Authorization: Bearer sk-FAKE-not-a-real-key-abcdefghij1234567890ABCDEFGHIJKL\"` and confirm active access to your OpenAI account within seconds.",
+      "Step 2: The attacker enumerates your account details and billing information by querying the OpenAI API endpoints (/v1/billing/usage, /v1/billing/subscription) to determine your spending limits and usage patterns. They discover your account has a $500/month limit with $120 remaining in the current cycle. They also pull your organization ID and associated models you have access to.",
+      "Step 3: The malicious actor launches a large-scale API abuse campaign, making rapid requests to the most expensive models (GPT-4 with 8K context at $0.03 per 1K input tokens) using automated scripts. Within 2-3 hours, they exhaust your entire $120 remaining budget across 40,000+ requests for token generation, code synthesis, and jailbreak testing. Your legitimate applications immediately start failing with 'quota exceeded' errors.",
+      "Step 4: Simultaneously, the attacker registers your compromised API key with a stolen credit card in a secondary OpenAI account, establishing a separate fraudulent billing profile. They run this fake account for 6-8 hours generating and selling synthetic training data before your security team receives the first suspicious charge notification of $3,400+, at which point the damage is already compounded across multiple fraud vectors."
+    ],
+    "1eede2c91c814c84aa14247cc6e640eb": [
+      "Step 1: Attacker discovers the leaked Stripe secret key using automated scanning tools like TruffleHog or GitRob scanning public GitHub repositories, detecting the key within 2-4 hours of commit. They validate the key's authenticity by making a test API call to https://api.stripe.com/v1/charges with the credentials, receiving a 200 response that confirms administrative access to the Stripe account.",
+      "Step 2: Attacker enumerates the account using Stripe API endpoints, retrieving all customer payment methods and transaction history via GET /v1/customers?limit=100. They identify 3,247 customers with stored payment methods and export this data, discovering average transaction values of $450 per customer and identifying high-value accounts worth $2.1M in total linked funds.",
+      "Step 3: Attacker creates unauthorized charges by submitting POST requests to /v1/charges with stolen customer tokens, initiating 127 fraudulent transactions totaling $57,150 before alerting systems trigger. They route funds to pre-established drop accounts and use refund API calls to cover tracks, exploiting the 90-day chargeback window to delay detection.",
+      "Step 4: Attacker pivots to access connected services by inspecting webhook endpoints and API connection logs, discovering integrations with Shopify and WooCommerce stores. They modify webhook URLs to intercept future customer transactions, maintain persistence through additional API key creation, and sell the customer database containing PII and payment details on dark web marketplaces for $15,000-$25,000, similar to the 2018 Ticketmaster breach affecting 40,000 customers."
+    ],
+    "fbf2ed613ecf554caf2245f55784ebc3": [
+      "Step 1: Token Discovery and Validation - A malicious actor uses automated scanning tools like TruffleHog or GitGuardian to discover the leaked token in your public repository commit history. Within minutes, they validate the token's permissions by making an API call: `curl -H 'Authorization: token ghp_abcdefghijklmnopqrstuvwxyz0123456789' https://api.github.com/user` and confirm it has full access to all repositories, including private ones with production code and deployment credentials.",
+      "Step 2: Repository Enumeration and Exfiltration - The attacker uses the GitHub API to list all accessible repositories via `GET /user/repos?per_page=100` and identifies 47 repositories including your company's private source code, infrastructure-as-code, and secrets management configs. They clone 12 critical repositories containing database credentials, AWS keys, and API secrets worth an estimated $50,000+ in cloud infrastructure access, downloading approximately 2.3 GB of proprietary code in under 5 minutes.",
+      "Step 3: Lateral Movement and Privilege Escalation - Using harvested AWS credentials from the cloned repositories, the attacker gains access to your production AWS environment and discovers 8 EC2 instances, 3 RDS databases, and 24 S3 buckets. They escalate privileges from an IAM user to assume a role with AdministratorAccess, gaining control of $250,000/month in cloud resources and setting up persistent backdoor access through a hidden Lambda function that maintains long-term access.",
+      "Step 4: Data Breach and Extortion - The attacker exfiltrates 500 GB of customer personal data (names, emails, payment information for 2.3 million users) from your primary RDS database to external storage, then modifies GitHub repository files to inject malicious code into your npm package that is downloaded 50,000 times daily. They send an extortion demand for $100,000 within 48 hours while threatening to sell the customer data on the dark web and publicly disclose the security breach, similar to the 2021 incident affecting a major gaming company."
+    ]
+  }
+}
