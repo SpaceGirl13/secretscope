@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeakLens — Secret exposure scanner</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/upload.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <a class="brand" href="/"><span class="brand-mark">◈</span> LeakLens</a>
+      <div class="project-label">SCANNING PROJECT</div>
+      <div class="project" id="projectName">Loading…</div>
+      <nav><a class="active" href="#findings">Findings <span id="navCount">0</span></a><a href="#how">How it works</a></nav>
+      <div class="privacy"><span>●</span> Local by default<br><small>Code never leaves this computer unless you turn on LLM review.</small></div>
+    </aside>
+    <main>
+      <header>
+        <div><p class="eyebrow">SECURITY WORKSPACE</p><h1>Find secrets before they find a way out.</h1><p class="subtitle">Scan your code and Git history for credentials, then fix the leaks with confidence.</p></div>
+        <div class="header-actions"><input id="fileInput" type="file" accept=".py,.js,.ts,.tsx,.jsx,.java,.go,.rb,.php,.env,.json,.yaml,.yml,.toml,.txt,.md,.sh,.bash,.zsh" hidden><button class="upload" id="uploadBtn">Scan a file</button><button class="scan" id="scanBtn"><span>↻</span> Run scan</button></div>
+      </header>
+      <section class="control-bar">
+        <label class="toggle"><input type="checkbox" id="history" checked><span></span> Include Git history <em>up to 60 commits</em></label>
+        <div class="status" id="status"><i></i> Ready to scan</div>
+      </section>
+      <section class="metrics" aria-label="Risk summary">
+        <article class="metric critical"><div><span>Critical</span><strong id="critical">0</strong></div><b>Immediate action</b></article>
+        <article class="metric high"><div><span>High</span><strong id="high">0</strong></div><b>Review today</b></article>
+        <article class="metric medium"><div><span>Medium</span><strong id="medium">0</strong></div><b>Plan a fix</b></article>
+        <article class="metric low"><div><span>Low</span><strong id="low">0</strong></div><b>Verify context</b></article>
+      </section>
+      <section id="findings" class="finding-section">
+        <div class="section-title"><div><p class="eyebrow">EXPOSURE REPORT</p><h2>Potential leaks</h2></div><div class="filters"><button class="filter selected" data-filter="all">All</button><button class="filter" data-filter="critical">Critical</button><button class="filter" data-filter="high">High</button><button class="filter" data-filter="history">History</button></div></div>
+        <div id="empty" class="empty"><div class="empty-icon">⌁</div><h3>Your workspace is ready</h3><p>Run a scan to look for exposed credentials in the current code and Git history.</p></div>
+        <div id="findingList" class="finding-list"></div>
+      </section>
+      <section id="how" class="how"><p class="eyebrow">WHAT LEAKLENS CHECKS</p><div><article><span>01</span><h3>Pattern scan</h3><p>Recognizes provider-specific keys, private keys, database URLs, passwords, and suspicious secret assignments.</p></article><article><span>02</span><h3>Risk context</h3><p>Ranks each result by impact and explains what could happen in plain English.</p></article><article><span>03</span><h3>Smart review</h3><p>Checks for example, test, and placeholder context; an optional LLM reviewer can give a second opinion.</p></article></div></section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
