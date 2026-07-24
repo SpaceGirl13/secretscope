@@ -1,5 +1,5 @@
 """
-SecretScope — Streamlit frontend
+SecretScope - Streamlit frontend
 Run with: streamlit run app.py
 """
 
@@ -10,7 +10,7 @@ import tempfile
 # Team imports
 from ai_layer import analyze_findings_batch, simulate_attack
 
-# Detector — real if available, mock otherwise.
+# Detector - real if available, mock otherwise.
 # scan_for_ai() is the safe entrypoint: it redacts the actual secret value
 # out of both `match` and `context` before findings ever reach the AI layer.
 try:
@@ -19,19 +19,19 @@ except ImportError:
     def scan_for_ai(code, filename="input"):
         return [
             {"type": "AWS Access Key", "service": "aws", "severity": "critical",
-             "line": 8, "match": "AKIA••••••••••••7890",
+             "line": 8, "match": "AKIA************7890",
              "context": 'AWS_ACCESS_KEY = "[REDACTED]"',
              "file": filename},
             {"type": "OpenAI API Key", "service": "openai", "severity": "critical",
-             "line": 12, "match": "sk-•••••••••••••••••••defg",
+             "line": 12, "match": "sk-*******************defg",
              "context": 'openai.api_key = "[REDACTED]"',
              "file": filename},
             {"type": "Stripe Secret Key", "service": "stripe", "severity": "critical",
-             "line": 15, "match": "sk_live_••••••••••••3210",
+             "line": 15, "match": "sk_live_************3210",
              "context": 'stripe.api_key = "[REDACTED]"',
              "file": filename},
             {"type": "GitHub Token", "service": "github", "severity": "high",
-             "line": 18, "match": "ghp_••••••••••••xyz123",
+             "line": 18, "match": "ghp_************xyz123",
              "context": 'GH_TOKEN = "[REDACTED]"',
              "file": filename},
         ]
@@ -39,12 +39,12 @@ except ImportError:
         return data.decode("utf-8", errors="replace")
 
 # Real GitHub repository scanning isn't implemented yet (git_scanner.py is
-# an empty stub) — this always returns safe, synthetic demo findings so the
+# an empty stub) - this always returns safe, synthetic demo findings so the
 # tab has something to show without pretending to have cloned a real repo.
 def scan_github_repo(url):
     return scan_for_ai("mock", "mock_repo/config.py")
 
-# Person 4's modules — graceful fallback if not ready
+# Person 4's modules - graceful fallback if not ready
 try:
     from diff_view import render_diff
 except ImportError:
@@ -97,7 +97,6 @@ def upload_backup(data):
 # ---------- Page config ----------
 st.set_page_config(
     page_title="SecretScope",
-    page_icon="🔒",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -107,153 +106,258 @@ st.set_page_config(
 st.markdown("""
 <style>
     :root {
-        --primary: #2F6FED;
-        --primary-hover: #1E54D6;
-        --primary-soft: rgba(47, 111, 237, 0.12);
-        --primary-border: rgba(47, 111, 237, 0.35);
-        --text-muted: #8A93A6;
-        --danger: #EF4444;
-        --danger-soft: rgba(239, 68, 68, 0.10);
+        --bg: #0b1220;
+        --panel: #111a2b;
+        --panel-soft: #152036;
+        --border: rgba(255,255,255,0.08);
+        --text: #f7f9fc;
+        --muted: #98a6ba;
+        --accent: #6f8cff;
+        --accent-2: #54d2b3;
+        --danger: #ff6b7a;
+        --warning: #f0b45a;
     }
 
-    .kicker {
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin: 0 0 0.4rem 0;
-    }
-    .main-header {
-        font-size: 2.75rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        background: linear-gradient(90deg, #7FA8F5 0%, var(--primary) 55%, #14338F 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0;
-    }
-    .subtitle {
-        font-size: 1.1rem;
-        color: var(--text-muted);
-        margin-top: 0.3rem;
-    }
-    .blast-radius-box {
-        background: var(--danger-soft);
-        color: #F5D5D5;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 3px solid var(--danger);
-        margin: 0.5rem 0;
-        font-size: 1.05rem;
-    }
-    .attack-step {
-        background: var(--primary-soft);
-        color: #CFE0FF;
-        padding: 0.8rem 1rem;
-        border-radius: 8px;
-        border-left: 3px solid var(--primary);
-        margin: 0.5rem 0;
-        font-family: 'SF Mono', 'Monaco', monospace;
-        font-size: 0.95rem;
-    }
-    .env-chip {
-        display: inline-block;
-        background: var(--primary-soft);
-        border: 1px solid var(--primary-border);
-        color: #9DBBFF;
-        padding: 0.15rem 0.6rem;
-        border-radius: 999px;
-        font-family: 'SF Mono', 'Monaco', monospace;
-        font-size: 0.85rem;
+    .stApp {
+        background: var(--bg);
+        color: var(--text);
     }
 
-    /* ---- Buttons ---- */
-    .stButton>button,
-    .stDownloadButton>button,
-    .stLinkButton>a {
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.15s ease;
-    }
-    .stButton>button:hover,
-    .stDownloadButton>button:hover,
-    .stLinkButton>a:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        transform: translateY(-1px);
+    .block-container {
+        max-width: 1180px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
     }
 
-    /* ---- Accessibility: visible focus rings everywhere ---- */
-    button:focus-visible,
-    a:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible,
-    [role="radio"]:focus-visible,
-    label:has(input:focus-visible) {
-        outline: 2px solid var(--primary) !important;
-        outline-offset: 2px;
-    }
-
-    /* ---- Sidebar branding ---- */
-    section[data-testid="stSidebar"] {
-        border-right: 1px solid var(--primary-border);
-    }
-    .sidebar-brand {
-        font-size: 1.3rem;
-        font-weight: 800;
-        letter-spacing: -0.01em;
-        color: #EAF0FF;
-        margin-bottom: 0;
-    }
-    .sidebar-tagline {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        margin-top: 0;
-    }
-
-    /* ---- Sidebar nav (radio styled as nav list) ---- */
-    section[data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 0.15rem;
-    }
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    .brand-lockup {
         display: flex;
         align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .brand-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: var(--accent);
+        box-shadow: 0 14px 34px rgba(84, 210, 179, 0.18);
+    }
+
+    .lock-icon {
+        position: relative;
+        width: 18px;
+        height: 15px;
+        border-radius: 4px;
+        background: #07111f;
+        display: block;
+        margin-top: 7px;
+    }
+
+    .lock-icon::before {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: -9px;
+        width: 12px;
+        height: 11px;
+        border: 3px solid #07111f;
+        border-bottom: 0;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .lock-icon::after {
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: 5px;
+        width: 2px;
+        height: 5px;
+        border-radius: 2px;
+        background: var(--accent);
+    }
+
+    .main-header {
+        margin: 0;
+        font-size: 2.5rem;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        color: var(--text);
+    }
+
+    .subtitle {
+        margin: 0.45rem 0 0;
+        color: var(--muted);
+        font-size: 1rem;
+    }
+
+    [data-testid="stSidebar"] {
+        background: rgba(9, 17, 31, 0.96);
+        border-right: 1px solid var(--border);
+    }
+
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 1.5rem;
+    }
+
+    .sidebar-brand {
+        margin-bottom: 0;
+        color: var(--text);
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    .sidebar-tagline {
+        margin-top: 0.25rem;
+        color: var(--muted);
+        font-size: 0.84rem;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 0.2rem;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] > label {
         width: 100%;
-        padding: 0.55rem 0.75rem;
-        border-radius: 8px;
-        margin-bottom: 0.15rem;
-        border-left: 3px solid transparent;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-        background: var(--primary-soft);
-    }
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
-        background: var(--primary-soft);
-        border-left: 3px solid var(--primary);
+        padding: 0.6rem 0.75rem;
+        border: 1px solid transparent;
+        border-radius: 11px;
+        transition: background 120ms ease, border-color 120ms ease;
     }
 
-    /* ---- Cards for scan panels & result groups ---- */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 12px !important;
+    [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+        background: rgba(111, 140, 255, 0.08);
     }
 
-    /* ---- Metric styling ---- */
-    div[data-testid="stMetric"] {
-        background: var(--primary-soft);
-        border: 1px solid var(--primary-border);
-        border-radius: 8px;
-        padding: 0.6rem 0.8rem;
+    [data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+        background: rgba(111, 140, 255, 0.12);
+        border-color: rgba(111, 140, 255, 0.25);
     }
 
-    /* ---- Expander polish ---- */
-    div[data-testid="stExpander"] summary {
-        font-weight: 600;
+    [data-testid="stMetric"] {
+        background: rgba(255,255,255,0.025);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.85rem 1rem;
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: var(--muted);
+    }
+
+    [data-testid="stMetricValue"] {
+        color: var(--text);
+    }
+
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-color: var(--border) !important;
+        border-radius: 18px !important;
+        background: rgba(17, 26, 43, 0.55);
+    }
+
+    .stTextArea textarea,
+    .stTextInput input {
+        background: #0d1728;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+    }
+
+    .stTextArea textarea:focus,
+    .stTextInput input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(111, 140, 255, 0.12);
+    }
+
+    .stButton > button,
+    .stDownloadButton > button,
+    .stLinkButton > a {
+        border-radius: 11px;
+        font-weight: 700;
+        min-height: 44px;
+        transition: transform 120ms ease, border-color 120ms ease;
+    }
+
+    .stButton > button[kind="primary"] {
+        color: var(--text);
+        background: #1b2a44;
+        border: 1px solid rgba(111, 140, 255, 0.45);
+        box-shadow: none;
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        color: var(--text);
+        background: #243654;
+        border-color: var(--accent);
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover,
+    .stLinkButton > a:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255,255,255,0.16);
+    }
+
+    [data-testid="stExpander"] {
+        background: rgba(17, 26, 43, 0.84);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    [data-testid="stExpander"] summary {
+        font-weight: 700;
+    }
+
+    .blast-radius-box {
+        background: rgba(255, 107, 122, 0.08);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 107, 122, 0.18);
+        margin: 0.5rem 0 1rem;
+        font-size: 1rem;
+        line-height: 1.65;
+    }
+
+    .attack-step {
+        background: rgba(111, 140, 255, 0.08);
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(111, 140, 255, 0.16);
+        margin: 0.55rem 0;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .env-chip {
+        display: inline-block;
+        background: rgba(111, 140, 255, 0.10);
+        border: 1px solid rgba(111, 140, 255, 0.24);
+        color: #b9c9ff;
+        padding: 0.18rem 0.62rem;
+        border-radius: 999px;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.85rem;
+    }
+
+    hr {
+        border-color: var(--border) !important;
+    }
+
+    .stAlert {
+        border-radius: 12px;
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+def normalize_severity(value):
+    """Return a consistent lowercase severity label."""
+    return str(value or "low").strip().lower()
 
 
 # ---------- Session state ----------
@@ -272,9 +376,18 @@ if "nav_page" not in st.session_state:
 
 
 # ---------- Header ----------
-st.markdown('<p class="kicker">Secret Detection &amp; Auto-Remediation</p>', unsafe_allow_html=True)
-st.markdown('<h1 class="main-header">SecretScope</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Find leaked secrets before attackers do. Understand the damage. Fix it in one click.</p>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="brand-lockup">
+        <div class="brand-mark"><span class="lock-icon"></span></div>
+        <div>
+            <h1 class="main-header">SecretScope</h1>
+            <p class="subtitle">Find leaked secrets before attackers do. Understand the damage. Fix it in one click.</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.divider()
 
 
@@ -295,20 +408,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.markdown("#### Scan stats")
-    if st.session_state.findings:
-        f = st.session_state.findings
-        s1, s2 = st.columns(2)
-        s1.metric("Critical", sum(1 for x in f if x.get("severity") == "critical"))
-        s2.metric("High", sum(1 for x in f if x.get("severity") == "high"))
-        s3, s4 = st.columns(2)
-        s3.metric("Medium", sum(1 for x in f if x.get("severity") == "medium"))
-        s4.metric("Total", len(f))
-    else:
-        st.info("No scan run yet.")
-
-    st.divider()
-    with st.expander("About SecretScope", icon=":material/info:"):
+    with st.expander("About SecretScope"):
         st.markdown("""
 Unlike other scanners, we:
 - **Detect** hardcoded secrets
@@ -326,36 +426,63 @@ SEV_COLOR = {"critical": "red", "high": "orange", "medium": "yellow", "low": "bl
 SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
 
-def run_scan(findings):
-    """Analyze already-detected findings with AI and store the results.
 
-    `findings` must already be in the redacted `scan_for_ai()` shape — no
-    raw secret values should reach this point.
-    """
+def run_scan(findings):
+    """Analyze redacted findings and store the results."""
     st.session_state.scan_ran = True
-    if not findings:
-        st.session_state.findings = []
-        st.session_state.analyses = []
+
+    try:
+        if not findings:
+            st.session_state.findings = []
+            st.session_state.analyses = []
+            st.session_state.attack_revealed = {}
+            return
+
+        with st.status("Analyzing findings...", expanded=True) as status:
+            st.write(f"Analyzing {len(findings)} finding(s)...")
+            analyses = analyze_findings_batch(findings)
+            status.update(
+                label=f"Found {len(findings)} finding(s)",
+                state="complete",
+            )
+
+        st.session_state.findings = findings
+        st.session_state.analyses = analyses
         st.session_state.attack_revealed = {}
-        return
-    with st.status("Analyzing findings...", expanded=True) as status:
-        st.write(f"Analyzing {len(findings)} finding(s)...")
-        analyses = analyze_findings_batch(findings)
-        status.update(label=f"Found {len(findings)} finding(s)", state="complete")
-    st.session_state.findings = findings
-    st.session_state.analyses = analyses
-    st.session_state.attack_revealed = {}
+
+    except Exception as error:
+        st.error(f"Scan failed: {error}")
+        st.exception(error)
 
 
 def display_metrics(findings):
-    critical = sum(1 for f in findings if f.get("severity") == "critical")
-    high = sum(1 for f in findings if f.get("severity") == "high")
-    medium = sum(1 for f in findings if f.get("severity") == "medium")
-    c1, c2, c3, c4 = st.columns(4)
+    critical = sum(
+        1
+        for finding in findings
+        if normalize_severity(finding.get("severity")) == "critical"
+    )
+    high = sum(
+        1
+        for finding in findings
+        if normalize_severity(finding.get("severity")) == "high"
+    )
+    medium = sum(
+        1
+        for finding in findings
+        if normalize_severity(finding.get("severity")) == "medium"
+    )
+    low = sum(
+        1
+        for finding in findings
+        if normalize_severity(finding.get("severity")) == "low"
+    )
+
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Total Findings", len(findings))
     c2.metric("Critical", critical)
     c3.metric("High", high)
     c4.metric("Medium", medium)
+    c5.metric("Low", low)
 
 
 def display_findings(findings, analyses):
@@ -369,7 +496,7 @@ def display_findings(findings, analyses):
 
     paired = sorted(
         zip(findings, analyses),
-        key=lambda p: SEV_ORDER.get(p[0].get("severity", "low"), 99)
+        key=lambda p: SEV_ORDER.get(normalize_severity(p[0].get("severity")), 99)
     )
 
     for idx, (finding, analysis) in enumerate(paired):
@@ -377,13 +504,10 @@ def display_findings(findings, analyses):
         if not analysis.get("is_real", True) and analysis.get("confidence", 0) < 30:
             continue
 
-        sev = finding.get("severity", "low")
-        color = SEV_COLOR.get(sev, "gray")
-
+        sev = normalize_severity(finding.get("severity"))
         with st.expander(
-            f":{color}-badge[{sev.upper()}] {finding['type']} · line {finding['line']} · {finding.get('file', 'input')}",
+            f"{sev.upper()} | {finding['type']} | line {finding['line']} | {finding.get('file', 'input')}",
             expanded=(idx == 0),
-            icon=":material/key:",
         ):
             st.markdown("#### Blast radius")
             st.markdown(
@@ -391,7 +515,7 @@ def display_findings(findings, analyses):
                 unsafe_allow_html=True
             )
 
-            st.markdown("#### Suggested fix")
+            st.markdown("#### Recommended fix")
             render_diff(
                 finding.get("context", ""),
                 analysis.get("fixed_line", ""),
@@ -407,7 +531,7 @@ def display_findings(findings, analyses):
             with col2:
                 rot = analysis.get("rotation_url", "")
                 if rot.startswith("http"):
-                    st.link_button("Rotate this key", rot, icon=":material/sync:", type="tertiary")
+                    st.link_button("Rotate this key", rot, type="tertiary")
                 else:
                     st.caption(rot)
 
@@ -415,11 +539,11 @@ def display_findings(findings, analyses):
 
             # Attack simulation button
             attack_key = f"attack_{idx}_{finding.get('line', 0)}"
-            if st.button("See attack scenario", key=f"btn_{attack_key}", icon=":material/bug_report:"):
+            if st.button("View attack scenario", key=f"btn_{attack_key}"):
                 st.session_state.attack_revealed[attack_key] = True
 
             if st.session_state.attack_revealed.get(attack_key):
-                st.markdown("#### Attack walkthrough")
+                st.markdown("#### Example attack path")
                 with st.spinner("Simulating attack..."):
                     steps = simulate_attack(finding, analysis)
                 step_container = st.empty()
@@ -435,16 +559,15 @@ def display_download_options(findings, analyses):
     if not findings:
         return
     st.divider()
-    st.markdown("### Take action")
+    st.markdown("### Export and remediate")
     c1, c2, c3 = st.columns(3)
 
     with c1:
         try:
             data = create_fix_bundle(findings, analyses)
             if data:
-                st.download_button("Fix bundle (.zip)", data=data,
-                    file_name="secretscope_fixes.zip", mime="application/zip",
-                    icon=":material/download:", use_container_width=True)
+                st.download_button("Download fix bundle", data=data,
+                    file_name="secretscope_fixes.zip", mime="application/zip", use_container_width=True)
             else:
                 st.caption("Fix bundle: Person 4 building")
         except Exception:
@@ -459,16 +582,15 @@ def display_download_options(findings, analyses):
                 )
                 if path:
                     with open(path, "rb") as pf:
-                        st.download_button("PDF report", data=pf.read(),
-                            file_name="secretscope_report.pdf", mime="application/pdf",
-                            icon=":material/picture_as_pdf:", use_container_width=True)
+                        st.download_button("Download PDF report", data=pf.read(),
+                            file_name="secretscope_report.pdf", mime="application/pdf", use_container_width=True)
                 else:
                     st.caption("PDF: Person 4 building")
         except Exception:
             st.caption("PDF unavailable")
 
     with c3:
-        if st.button("New scan", icon=":material/refresh:", use_container_width=True):
+        if st.button("Start new scan", use_container_width=True):
             st.session_state.findings = []
             st.session_state.analyses = []
             st.session_state.attack_revealed = {}
@@ -483,7 +605,7 @@ with st.container(border=True):
     if page == "Paste Code":
         st.markdown("### Paste code to scan")
 
-        if st.button("Load sample vulnerable code (for demo)", icon=":material/auto_awesome:"):
+        if st.button("Load sample code"):
             st.session_state.paste_input = SAMPLE_VULNERABLE_CODE
             st.rerun()
 
@@ -492,9 +614,9 @@ with st.container(border=True):
             help="Paste a file's contents to check for hardcoded secrets.",
         )
 
-        if st.button("Scan for Secrets", type="primary", key="scan_paste", icon=":material/search:"):
+        if st.button("Scan for secrets", type="primary", key="scan_paste"):
             if code.strip():
-                run_scan(scan_for_ai(code, filename="pasted_input"))
+                run_scan(scan_for_ai(code, filename="pasted_input.py"))
             else:
                 st.warning("Please paste some code first.")
 
@@ -505,7 +627,7 @@ with st.container(border=True):
             type=["py", "js", "ts", "env", "yml", "yaml", "json", "txt", "md", "sh", "rb", "go", "java", "conf", "ini", "cfg"],
             help="Accepted: py, js, ts, env, yml, yaml, json, txt, md, sh, rb, go, java, conf, ini, cfg",
         )
-        if uploaded and st.button("Scan uploaded files", type="primary", key="scan_upload", icon=":material/search:"):
+        if uploaded and st.button("Scan uploaded files", type="primary", key="scan_upload"):
             all_findings = []
             for f in uploaded:
                 try:
@@ -518,12 +640,12 @@ with st.container(border=True):
 
     elif page == "GitHub Repo":
         st.markdown("### Scan a public GitHub repository")
-        st.caption("Demo mode — real repository cloning isn't wired up yet, so this scans safe synthetic data.")
+        st.caption("Demo mode - real repository cloning isn't wired up yet, so this scans safe synthetic data.")
         repo_url = st.text_input(
             "GitHub URL:", placeholder="https://github.com/username/repository",
             help="Paste the full URL of a public GitHub repository.",
         )
-        if st.button("Scan repository", type="primary", key="scan_repo", icon=":material/search:"):
+        if st.button("Scan repository", type="primary", key="scan_repo"):
             if repo_url.strip():
                 try:
                     run_scan(scan_github_repo(repo_url.strip()))
