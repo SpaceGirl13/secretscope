@@ -22,8 +22,21 @@ MODEL = "claude-haiku-4-5-20251001"
 
 # ---------- Caching ----------
 # Cache results in memory so re-scans during the demo are instant.
+# ---------- Caching ----------
 _analysis_cache = {}
 _attack_cache = {}
+
+# Auto-load cache from disk if present
+try:
+    with open("cache.json") as _cf:
+        _cached = json.load(_cf)
+        _analysis_cache.update(_cached.get("analyses", {}))
+        _attack_cache.update(_cached.get("attacks", {}))
+        print(f"[ai_layer] Loaded {len(_analysis_cache)} cached analyses, {len(_attack_cache)} cached attacks")
+except FileNotFoundError:
+    pass
+except Exception as e:
+    print(f"[ai_layer] Cache load failed: {e}")
 
 
 def _cache_key(finding):
