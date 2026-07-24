@@ -1,0 +1,92 @@
+[
+  {
+    "name": "AWS Access Key ID",
+    "service": "aws",
+    "severity": "Critical",
+    "regex": "\\bAKIA[0-9A-Z]{16}\\b"
+  },
+  {
+    "name": "GitHub Personal Access Token",
+    "service": "github",
+    "severity": "Critical",
+    "regex": "\\bghp_[A-Za-z0-9]{36}\\b"
+  },
+  {
+    "name": "GitHub Fine-Grained Token",
+    "service": "github",
+    "severity": "Critical",
+    "regex": "\\bgithub_pat_[A-Za-z0-9_]{50,100}\\b"
+  },
+  {
+    "name": "Slack Token",
+    "service": "slack",
+    "severity": "High",
+    "regex": "\\bxox[baprs]-[A-Za-z0-9-]{10,100}\\b"
+  },
+  {
+    "name": "Stripe Secret Key",
+    "service": "stripe",
+    "severity": "High",
+    "regex": "\\bsk_(?:live|test)_[A-Za-z0-9]{20,}\\b"
+  },
+  {
+    "name": "Google API Key",
+    "service": "google",
+    "severity": "High",
+    "regex": "\\bAIza[0-9A-Za-z_-]{35}\\b"
+  },
+  {
+    "name": "OpenAI-Style API Key",
+    "service": "openai",
+    "severity": "High",
+    "regex": "\\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\\b"
+  },
+  {
+    "name": "Anthropic-Style API Key",
+    "service": "anthropic",
+    "severity": "High",
+    "regex": "\\bsk-ant-[A-Za-z0-9_-]{20,}\\b"
+  },
+  {
+    "name": "JSON Web Token",
+    "service": "jwt",
+    "severity": "Medium",
+    "regex": "\\beyJ[A-Za-z0-9_-]+\\.eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\b"
+  },
+  {
+    "name": "Private Key",
+    "service": "private_key",
+    "severity": "Critical",
+    "regex": "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+  },
+  {
+    "name": "Database Connection String",
+    "service": "database",
+    "severity": "Critical",
+    "regex": "(?:postgres(?:ql)?|mysql|mongodb(?:\\+srv)?):\\/\\/[^\\s\\\"']+"
+  },
+  {
+    "name": "Bearer Token",
+    "service": "bearer",
+    "severity": "High",
+    "regex": "(?i)\\bBearer\\s+([A-Za-z0-9._~-]{12,})\\b"
+  },
+  {
+    "name": "Hardcoded Password",
+    "service": "password",
+    "severity": "High",
+    "regex": "(?i)\\b(?:password|passwd|pwd)\\b\\s*[:=]\\s*[\\\"']([^\\\"']{6,})[\\\"']"
+  },
+  {
+    "name": "Generic API Key",
+    "service": "generic_api",
+    "severity": "Medium",
+    "regex": "(?i)\\b(?:api[_-]?key|apikey|client[_-]?secret)\\b\\s*[:=]\\s*[\\\"']([A-Za-z0-9._~-]{8,})[\\\"']"
+  },
+  {
+    "name": "Generic Access Token",
+    "service": "generic_token",
+    "severity": "Medium",
+    "regex": "(?i)\\b(?:access[_-]?token|auth[_-]?token|secret[_-]?token)\\b\\s*[:=]\\s*[\\\"']([A-Za-z0-9._~-]{8,})[\\\"']"
+  }
+]
