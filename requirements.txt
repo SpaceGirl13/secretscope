@@ -4,3 +4,4 @@ python-dotenv
 gitpython
 reportlab
 regex
+reportlab
