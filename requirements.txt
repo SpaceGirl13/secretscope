@@ -1,0 +1,6 @@
+streamlit
+anthropic
+python-dotenv
+gitpython
+reportlab
+regex
